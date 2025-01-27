@@ -95,6 +95,22 @@ class MyTestCase(unittest.TestCase):
 
 
 
+    def testDestroy(self):
+
+        disk = Disk(100)
+
+        disk.create('Jen')
+
+        self.assertEqual(disk.destroy('Jen'), 'file Jen destroyed')
+
+        #creates an array where its true if there is a non free fs
+        self.assertEquals([True if x.size == 0 else False for x in disk[1]].count(True), 1)
+
+        self.assertEqual([True if x[0] != 0 else False for x in disk[disk.k]].count(True), 0)
+
+        with self.assertRaises(Exception):
+            disk.destroy('tone')
+
 
 
 

@@ -109,7 +109,7 @@ class Disk:
         #search directory for name
 
         for b in dirBlocks:
-            for i in range(len(self.disk[b][i])):
+            for i in range(len(self.disk[b])):
                 #if found, mark entry as free
                 if self.disk[b][i][0] == name:
                     self.freeDescriptor(self.disk[b][i][1])

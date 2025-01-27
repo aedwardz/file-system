@@ -88,6 +88,37 @@ class Disk:
                     entries[i] = (name, fdNum)
                     break
 
+    def freeDescriptor(self, num):
+        count = 0
+        freed = False
+        for b in range(1, self.k):
+            if not freed:
+                for fd in range(len(self.disk[b])):
+                    if count == num:
+                        self.disk[b][fd].size = -1
+                        for block in self.disk[b][fd].blockPointers:
+                            self.deallocate_block(block)
+                        self.disk[b][fd].blockPointers = []
+                        freed = True
+                        break
+                    count += 1
+
+
+    def destroy(self, name):
+        dirBlocks = self.disk[1][0].blockPointers
+        #search directory for name
+
+        for b in dirBlocks:
+            for i in range(len(self.disk[b][i])):
+                #if found, mark entry as free
+                if self.disk[b][i][0] == name:
+                    self.freeDescriptor(self.disk[b][i][1])
+                    self.disk[b][i] = (0,0)
+                    return f"file {name} destroyed"
+
+        raise Exception('file does not exist')
+
+
 
     def __getitem__(self, item):
         return self.disk[item]

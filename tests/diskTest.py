@@ -72,6 +72,33 @@ class MyTestCase(unittest.TestCase):
             disk.create('jen')
 
 
+    def testFreeDescriptor(self):
+        disk = Disk(100)
+
+        disk.create('tone')
+        disk.freeDescriptor(1)
+
+        self.assertEqual(disk[1][1].size, -1)
+        self.assertEqual(len(disk[1][1].blockPointers), 0)
+
+        fd = FileDescriptor()
+        fd.size = 0
+        fd.blockPointers = [9, 10, 11]
+
+        for num in fd.blockPointers:
+            disk[0][num] = 1
+
+        disk[1][1] = fd
+        disk.freeDescriptor(1)
+
+        self.assertEqual(disk[0].count(1), 8)
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -71,7 +71,6 @@ class MyTestCase(unittest.TestCase):
         with self.assertRaises(Exception):
             disk.create('jen')
 
-
     def testFreeDescriptor(self):
         disk = Disk(100)
 
@@ -93,8 +92,6 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(disk[0].count(1), 8)
 
-
-
     def testDestroy(self):
 
         disk = Disk(100)
@@ -111,7 +108,12 @@ class MyTestCase(unittest.TestCase):
         with self.assertRaises(Exception):
             disk.destroy('tone')
 
+    def testSearchDir(self):
+        disk = Disk(100)
+        disk.create('tone')
 
+        self.assertEqual(disk.searchDirectory('tone'), 1)
+        self.assertIsNone(disk.searchDirectory('jack'))
 
 
 

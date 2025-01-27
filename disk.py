@@ -25,6 +25,7 @@ class Disk:
             self.disk[0][block_index] = 0  # Mark as free
         else:
             raise ValueError(f"Block {block_index} is already free.")
+
     def initializeDisk(self) -> None:
         """
         Initializes the disk split up into the bitMap, File Descriptors, and the block content
@@ -37,13 +38,16 @@ class Disk:
             self.disk[0][i] = 1
         self.create_directory()
 
-
-
-
-    def get_file_descriptor(self, descriptor_index):
+    def getFD(self, fdIndex):
         """Retrieve a file descriptor by index."""
-        block_index, fd_index = descriptor_index
-        return self.disk[block_index][fd_index]
+        fdNum = 0
+        #       #new file descriptor
+        for i in range(1, self.k):
+            for fd in self.disk[i]:
+                if fdNum == fdIndex:
+                    return i, fdNum
+                fdNum += 1
+
 
     def create_directory(self):
         """Create a new directory."""
@@ -56,6 +60,23 @@ class Disk:
         fd.blockPointers.append(self.allocate_block()) # Allocate a block for children metadata
         block = fd.blockPointers[0]
         self.disk[block] = [(0,0) for i in range(512//8)]
+
+    def searchDirectory(self, name):
+        """
+
+        :param name: name of the file to be searched for
+        :return:
+            returns None if file not found in directory
+            reuturns the descriptor index if found
+        """
+
+        dirBlocks = self.disk[1][0].blockPointers
+        for b in dirBlocks:
+            for entry in self.disk[b]:
+                if entry[0] == name:
+                    return entry[1]
+        return None
+
 
     def create(self, name):
         # search directory first
@@ -103,7 +124,6 @@ class Disk:
                         break
                     count += 1
 
-
     def destroy(self, name):
         dirBlocks = self.disk[1][0].blockPointers
         #search directory for name
@@ -117,8 +137,6 @@ class Disk:
                     return f"file {name} destroyed"
 
         raise Exception('file does not exist')
-
-
 
     def __getitem__(self, item):
         return self.disk[item]

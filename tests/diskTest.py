@@ -46,6 +46,32 @@ class MyTestCase(unittest.TestCase):
         disk.allocate_block()
         self.assertEqual(disk.disk[0].count(1), 9)
 
+    def testCreate(self):
+        disk = Disk(50)
+
+        disk.create("tone")
+        # for i in range(len(disk)):
+        #     print(disk[i])
+
+        self.assertEquals([True if x.size == 0 else False for x in disk[1]].count(True), 2)
+
+        with self.assertRaises(Exception):
+            disk.create('tone')
+
+        disk.create('mom')
+        self.assertEqual([True if x[0] != 0 else False for x in disk[disk.k]].count(True), 2 )
+
+        for b in range(1, disk.k):
+            for i in range(len(disk[b])):
+                disk[b][i].size = 0
+
+        for i in range(len(disk)):
+            print(disk[i])
+
+        with self.assertRaises(Exception):
+            disk.create('jen')
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -57,6 +57,36 @@ class Disk:
         block = fd.blockPointers[0]
         self.disk[block] = [(0,0) for i in range(512//8)]
 
+    def create(self, name):
+        # search directory first
+        directoryBlocks = self.disk[1][0].blockPointers
+        for block in directoryBlocks:
+            entries = self.disk[block]
+            for entry in entries:
+                if entry[0] == name:
+                    raise Exception('Duplicate file')
+
+        fdNum = -1
+        #       #new file descriptor
+        assigned = False
+        for i in range(1, self.k):
+            if not assigned:
+                for fd in self.disk[i]:
+                    fdNum += 1
+                    if fd.size == -1:
+                        fd.size = 0
+                        assigned = True
+                        break
+
+        if not assigned:
+            raise Exception("too many files")
+
+        for block in directoryBlocks:
+            entries = self.disk[block]
+            for i in range(len(entries)):
+                if entries[i][0] == 0:
+                    entries[i] = (name, fdNum)
+                    break
 
 
     def __getitem__(self, item):

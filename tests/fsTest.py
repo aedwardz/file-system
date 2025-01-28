@@ -12,6 +12,30 @@ class TestFS(unittest.TestCase):
         """Set up a fresh FS instance before each test."""
         self.fs = FS()
 
+
+    def testAllocateWhenOpen(self):
+        self.fs.create('tone')
+        b, i = self.fs.disk.getFD(self.fs.disk.searchDirectory('tone'))
+        self.assertEqual(0, self.fs.disk[b][i].size)
+        self.fs.open('tone')
+        b, i = self.fs.disk.getFD(self.fs.disk.searchDirectory('tone'))
+        self.assertEqual(1, len(self.fs.disk[b][i].blockPointers))
+
+    def testCopyBuffer(self):
+        self.fs.create('jen')
+        b, i = self.fs.disk.getFD(self.fs.disk.searchDirectory('jen'))
+        self.fs.disk[b][i].blockPointers.append(self.fs.disk.allocate_block())
+        self.fs.disk[b][i].size = 1
+        content = [1]
+        block = self.fs.disk[b][i].blockPointers[0]
+        print(block)
+
+        self.fs.disk[block] = content
+        print(self.fs.disk[block])
+        entryNum = self.fs.open('jen')
+        print(self.fs.oft[entryNum].buf)
+        self.assertEqual(content, self.fs.oft[entryNum].buf)
+
     def test_open_file_not_exist(self):
         """Test that opening a non-existent file raises an exception."""
         with self.assertRaises(Exception) as context:
@@ -57,13 +81,13 @@ class TestFS(unittest.TestCase):
         oft_index = self.fs.open("new")
         self.assertEqual(self.fs.oft[oft_index].descriptor, dir_index)
 
-    # def test_destroy_file(self):
+    # def testCloseFile(self):
     #     """Test destroying a file."""
     #     # Create a file
-    #     self.fs.disk.create("del")
+    #     self.fs.create("del")
     #
     #     # Destroy the file
-    #     result = self.fs.disk.destroy("del")
+    #     result = self.fs.close(0)
     #     self.assertEqual(result, "file del destroyed")
     #
     #     # Verify the file is no longer in the directory
@@ -90,6 +114,8 @@ class TestFS(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             self.fs.disk.create("dupl")
         self.assertEqual(str(context.exception), "Duplicate file")
+
+
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 
 class OFT:
     def __init__(self):
-        self.oft = [oftEntry()] * 4
+        self.oft = [oftEntry() for i in range(4)]
 
     def __getitem__(self, item):
         return self.oft[item]
@@ -22,9 +22,14 @@ class OFT:
 
         return None
 
-class oftEntry:
+class oftEntry():
     def __init__(self):
         self.buf = []
         self.position = -1
         self.size = 0
         self.descriptor = -1
+    def __repr__(self):
+        if self.position == -1:
+            return 'empty'
+        else:
+            return "occupied"

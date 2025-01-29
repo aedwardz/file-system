@@ -18,7 +18,6 @@ class Disk:
                 return i  # Return the bitmap index
         raise ValueError("No free blocks available.")
 
-
     def deallocate_block(self, block_index):
         """Free a previously allocated block."""
         if self.disk[0][block_index] == 1:  # Block is in use
@@ -39,7 +38,12 @@ class Disk:
         self.create_directory()
 
     def getFD(self, fdIndex):
-        """Retrieve a file descriptor by index."""
+        """
+        returns a file descriptors index in the disk given the fd number
+        :param fdIndex:
+        :return:
+        (block, index)
+        """
         fdNum = 0
         #       #new file descriptor
         for i in range(1, self.k):
@@ -47,7 +51,6 @@ class Disk:
                 if fdNum == fdIndex:
                     return i, fdNum
                 fdNum += 1
-
 
     def create_directory(self):
         """Create a new directory."""
@@ -76,7 +79,6 @@ class Disk:
                 if entry[0] == name:
                     return entry[1]
         return None
-
 
     def create(self, name):
         # search directory first

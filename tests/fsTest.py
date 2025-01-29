@@ -119,15 +119,45 @@ class TestFS(unittest.TestCase):
 
         self.assertTrue([True if x.position == -1 else False for x in self.fs.oft])
 
-    def testCloseBufferWrite(self):
-        self.fs.create('tone')
-        self.fs.open('tone')
-        self.fs.oft[0].buf = [1,2,3,4]
-        self.fs.oft[0].size = 100
-        b, i = self.fs.disk.getFD(self.fs.oft[0].descriptor)
+    def testBasicRead(self):
+        self.fs.create("tone")
+        b, i = self.fs.disk.getFD(self.fs.disk.searchDirectory("tone"))
+        self.fs.disk[b][i].blockPointers.append(self.fs.disk.allocate_block())
+        self.fs.disk[b][i].size = 1
         block = self.fs.disk[b][i].blockPointers[0]
-        self.fs.close(0)
-        self.assertEqual(self.fs.disk[block], [1,2,3,4])
-        self.assertEqual(self.fs.disk[b][i].size, 100)
+
+        self.fs.disk[block][0] = 1
+        self.fs.disk[block][1] = 2
+        self.fs.disk[block][2] = 3
+        self.fs.disk[block][3] = 4
+        self.fs.disk[block][4] = 5
+        self.fs.open('tone')
+        self.assertEqual(self.fs.read(0, 0, 5), "all bytes read")
+        expected = [1,2,3,4, 5] + [0 for i in range(512-5)]
+        self.assertEqual(len(expected), 512)
+        self.assertEqual(self.fs.M, expected)
+        self.assertEqual(self.fs.oft[0].position, 5)
+    def testReadBetweenBuffers(self):
+        self.fs.create("tone")
+        b, i = self.fs.disk.getFD(self.fs.disk.searchDirectory("tone"))
+        self.fs.disk[b][i].blockPointers.append(self.fs.disk.allocate_block())
+        self.fs.disk[b][i].blockPointers.append(self.fs.disk.allocate_block())
+        self.fs.disk[b][i].size = 1
+        block1 = self.fs.disk[b][i].blockPointers[0]
+        block2 = self.fs.disk[b][i].blockPointers[1]
+
+
+        self.fs.disk[block1]  = [0 for i in range(512-5)] + [1,2,3,4,5]
+        self.fs.disk[block2] = [6,7,8,9,10] + [0 for i in range(512-5)]
+        self.fs.open('tone')
+        self.fs.oft[0].position = 507
+        self.assertEqual(self.fs.read(0,0,10), "all bytes read")
+        self.assertEqual(self.fs.M, [1,2,3,4,5,6,7,8,9,10] + [0 for i in range(502)])
+
+
+
+
+
+
 if __name__ == "__main__":
     unittest.main()

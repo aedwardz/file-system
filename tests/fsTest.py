@@ -1,6 +1,6 @@
 import unittest
 from disk import Disk
-from oft import OFT
+from oft import OFT, oftEntry
 from inputBuffer import InputBuffer
 from outputBuffer import OutputBuffer
 from fs import FS
@@ -11,6 +11,26 @@ class TestFS(unittest.TestCase):
     def setUp(self):
         """Set up a fresh FS instance before each test."""
         self.fs = FS()
+
+    def testBufToBlock(self):
+        self.fs.create('tone')
+
+        self.fs.oft[1].buf = [1,2,3,4]
+
+        self.fs.bufToBlock(1, 10)
+
+        self.assertEqual(self.fs.disk[10], [1,2,3,4])
+
+    def testBlockToBuf(self):
+        i = 1
+        b = 10
+
+        self.fs.disk[b] = [1,2,3,4]
+        self.fs.blockToBuf(i, b)
+        self.assertEqual(self.fs.oft[i].buf, [1,2,3,4])
+
+
+
 
 
     def testAllocateWhenOpen(self):
@@ -81,30 +101,6 @@ class TestFS(unittest.TestCase):
         oft_index = self.fs.open("new")
         self.assertEqual(self.fs.oft[oft_index].descriptor, dir_index)
 
-    # def testCloseFile(self):
-    #     """Test destroying a file."""
-    #     # Create a file
-    #     self.fs.create("del")
-    #
-    #     # Destroy the file
-    #     result = self.fs.close(0)
-    #     self.assertEqual(result, "file del destroyed")
-    #
-    #     # Verify the file is no longer in the directory
-    #     dir_index = self.fs.disk.searchDirectory("delete_me.txt")
-    #     self.assertIsNone(dir_index)
-    #
-    # def test_open_after_destroy(self):
-    #     """Test that attempting to open a destroyed file raises an exception."""
-    #     # Create and destroy a file
-    #     self.fs.disk.create("oldfile.txt")
-    #     self.fs.disk.destroy("oldfile.txt")
-    #
-    #     # Attempt to open the file
-    #     with self.assertRaises(Exception) as context:
-    #         self.fs.open("oldfile.txt")
-    #     self.assertEqual(str(context.exception), "File does not exist")
-
     def test_create_duplicate_file(self):
         """Test creating a file with a duplicate name raises an exception."""
         # Create a file
@@ -116,7 +112,22 @@ class TestFS(unittest.TestCase):
         self.assertEqual(str(context.exception), "Duplicate file")
 
 
+    def testCloseOneFile(self):
+        self.fs.create("tone")
+        self.fs.open('tone')
+        self.fs.close(0)
 
+        self.assertTrue([True if x.position == -1 else False for x in self.fs.oft])
 
+    def testCloseBufferWrite(self):
+        self.fs.create('tone')
+        self.fs.open('tone')
+        self.fs.oft[0].buf = [1,2,3,4]
+        self.fs.oft[0].size = 100
+        b, i = self.fs.disk.getFD(self.fs.oft[0].descriptor)
+        block = self.fs.disk[b][i].blockPointers[0]
+        self.fs.close(0)
+        self.assertEqual(self.fs.disk[block], [1,2,3,4])
+        self.assertEqual(self.fs.disk[b][i].size, 100)
 if __name__ == "__main__":
     unittest.main()

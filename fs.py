@@ -11,6 +11,32 @@ class FS:
         self.I = InputBuffer()
         self.O = OutputBuffer()
 
+    def bufToBlock(self, i:int, block:int) -> None:
+        """
+        Copies the buffer at entry i of the OFT
+        onto disk at the given block
+        :param i:
+        :param block:
+        :return:
+        """
+        buf = self.oft[i].buf
+        self.disk[block] = buf
+
+    def blockToBuf(self, i:int, block:int) -> None:
+        """
+        copies the block b on the disk into the oft buf
+        at the specified index i
+        :param i:
+            entry index
+        :param block:
+            disk block
+        :return:
+            None
+        """
+        self.oft[i].buf = self.disk[block]
+
+
+
     def create(self, name):
         return self.disk.create(name)
 
@@ -47,13 +73,13 @@ class FS:
         """
         #copy buffer to disk
         entry = self.oft[i]
-        block = entry.descriptor.blockPointers[0]
-        self.disk[block] = entry.buf
-
+        blockPointerindex = entry.position // 512
+        b, x = self.disk.getFD(entry.descriptor)
+        block = self.disk[b][x].blockPointers[blockPointerindex]
+        self.bufToBlock(i, block)
         #update file size in descriptor
 
-        b, i = self.disk.getFD(entry.descriptor)
-        self.disk[b][i].size = entry.size
+        self.disk[b][x].size = entry.size
 
 
         #mark oft entry as free by setting current position to -1
@@ -61,6 +87,33 @@ class FS:
 
         return f"File {i} closed"
 
+
+    def seek(self, i, p) -> str:
+        """
+        Changes block and current position of a file
+        :param i:
+            OFT index
+        :param p:
+            New position to be set to
+        :return:
+            Success String
+        """
+        if p > self.oft[i].size:
+            raise Exception('current position is past the end of the file')
+
+
+        currentBlock = self.oft[i].position // 512
+
+        newBlock = p // 512
+
+        if currentBlock != newBlock:
+            #copy current buffer back to disk
+            self.bufToBlock(i, currentBlock)
+            #copy new block onto the entry
+            self.blockToBuf(i, newBlock)
+
+        self.oft[i].position = p
+        return f'Current position is {p}'
 
 
 

@@ -5,7 +5,7 @@ class Disk:
     def __init__(self, blocks:int):
         self.k = ceil(192/32) + 1
         self.blocks = blocks
-        self.disk = [0] * blocks
+        self.disk = [[0] * 512 for _ in range(blocks)]
         self.initializeDisk()
 
     def allocate_block(self):
@@ -51,6 +51,10 @@ class Disk:
                 if fdNum == fdIndex:
                     return i, fdNum
                 fdNum += 1
+
+    def getFDBlocks(self, fdIndex):
+        b, i = self.getFD(fdIndex)
+        return self.disk[b][i].blockPointers
 
     def create_directory(self):
         """Create a new directory."""

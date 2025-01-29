@@ -36,7 +36,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(disk[disk.k],[(0,0) for i in range(512//8)])
         # Check uninitialized blocks remain 0
         for i in range(disk.k+1, blocks):
-            self.assertEqual(disk.disk[i], 0)
+            self.assertEqual(disk.disk[i], [0] * 512)
 
     def testAllocate(self):
         blocks = 100

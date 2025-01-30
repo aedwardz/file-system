@@ -154,9 +154,49 @@ class TestFS(unittest.TestCase):
         self.assertEqual(self.fs.read(0,0,10), "all bytes read")
         self.assertEqual(self.fs.M, [1,2,3,4,5,6,7,8,9,10] + [0 for i in range(502)])
 
+    def testBasicWrite(self):
+        self.fs.create("tone")
+        self.fs.open("tone")
 
+        # Prepare data in memory M to write
+        self.fs.M = [1, 2, 3, 4, 5] + [0 for _ in range(512 - 5)]
 
+        # Write 5 bytes from memory M starting at index 0
+        self.assertEqual(self.fs.write(0, 0, 5), "5 bytes written")
 
+        # Ensure that position has been updated
+        self.assertEqual(self.fs.oft[0].position, 5)
+
+        # Ensure the data was correctly written to disk
+        b, i = self.fs.disk.getFD(self.fs.disk.searchDirectory("tone"))
+        block = self.fs.disk[b][i].blockPointers[0]
+
+        expected = [1, 2, 3, 4, 5] + [0 for _ in range(512 - 5)]
+        self.assertEqual(self.fs.oft[0].buf, expected)
+
+        # Ensure file size is updated correctly
+        self.assertEqual(self.fs.oft[0].size, 5)
+    def testWriteBetweenBuffers(self):
+        self.fs.create("tone")
+        self.fs.open("tone")
+
+        # Prepare data in memory M to write
+        self.fs.M = [5] * 512
+        self.fs.oft[0].position = 1
+        blocks = self.fs.disk.getFDBlocks(self.fs.oft[0].descriptor)
+        print(blocks)
+        # Write 5 bytes from memory M starting at index 0
+        self.assertEqual(self.fs.write(0, 0, 512), "512 bytes written")
+        blocks = self.fs.disk.getFDBlocks(self.fs.oft[0].descriptor)
+        print(blocks)
+
+        # Ensure that position has been updated
+        self.assertEqual(self.fs.oft[0].position, 513)
+        # print(self.fs.disk[8])
+        self.assertEqual(self.fs.disk[blocks[0]], [0] + [5 for i in range(511)])
+        self.assertEqual(self.fs.oft[0].buf, [5] + [0 for i in range(511)])
+
+        self.assertEqual(self.fs.oft[0].size, 513)
 
 
 if __name__ == "__main__":

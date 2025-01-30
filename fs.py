@@ -8,8 +8,6 @@ class FS:
         self.disk = Disk(100)
         self.oft = OFT()
         self.k = self.disk.k
-        self.I = InputBuffer()
-        self.O = OutputBuffer()
         self.M = [0] * 512
 
     def bufToBlock(self, i:int, block:int) -> None:
@@ -21,7 +19,7 @@ class FS:
         :return:
         """
         buf = self.oft[i].buf
-        self.disk[block] = buf
+        self.disk[block] = buf.copy()
 
     def blockToBuf(self, i:int, block:int) -> None:
         """
@@ -34,7 +32,7 @@ class FS:
         :return:
             None
         """
-        self.oft[i].buf = self.disk[block]
+        self.oft[i].buf = self.disk[block].copy()
 
     def create(self, name):
         return self.disk.create(name)
@@ -125,74 +123,55 @@ class FS:
 
     def write(self, i: int, m: int, n: int) -> str:
         """
-        Writes n bytes from memory M starting at position m to the open file at OFT index i.
-        Returns the number of bytes written.
+        Writes n bytes from memory M starting at location m into the open file at OFT index i,
+        starting at the current position. A file can have a maximum of 3 allocated blocks.
+        :param i: OFT index of the open file
+        :param m: Starting location in memory M
+        :param n: Number of bytes to write
+        :return: Success message with the number of bytes written or an error if max blocks exceeded.
         """
-        # Check if file is open
-        if self.oft[i].position == -1:
-            raise Exception("File is not open")
 
         entry = self.oft[i]
-        bytes_written = 0
-        max_file_size = 3 * 512  # Maximum file size in basic version (3 blocks)
+        blocks = self.disk.getFDBlocks(entry.descriptor)
+        bpIndex = entry.position // 512  # Block index in file
+        startPos = entry.position  # Track the initial position
+        startingBlock = blocks[bpIndex] if bpIndex < len(blocks) else None
+        offset = entry.position % 512  # Offset within block
+        mIndex = m
+        bytesWritten = 0
 
-        while bytes_written < n and entry.position < max_file_size:
-            # Calculate position within current buffer
-            offset = entry.position % 512
-            remaining_in_block = 512 - offset
+        while bytesWritten < n:
+            self.oft[i].buf[offset] = self.M[mIndex]
+            offset += 1
+            self.oft[i].position += 1
+            mIndex += 1
+            bytesWritten += 1
+            if bytesWritten == n:
+                if self.oft[i].position > self.oft[i].size:
+                    size = self.oft[i].size = self.oft[i].position
+                    b, x = self.disk.getFD(self.oft[i].descriptor)
+                    self.disk[b][x].size = size
+                    self.oft[i].size = size
+                return f"{n} bytes written"
 
-            # Calculate bytes to write in this iteration
-            bytes_to_write = min(n - bytes_written, remaining_in_block,
-                                 max_file_size - entry.position)
+            if offset == 512:
+                #switch buffers
+                offset = 0
+                self.bufToBlock(i, startingBlock)
+                bpIndex += 1
+                if bpIndex == len(blocks):
+                    if len(blocks) == 3:
+                        return f"{bytesWritten} bytes written"
+                    else:
+                        b, x = self.disk.getFD(entry.descriptor)
+                        self.disk[b][x].blockPointers.append(self.disk.allocate_block())
+                        blocks = self.disk.getFDBlocks(entry.descriptor)
+                        startingBlock = blocks[bpIndex]
+                        self.blockToBuf(i, startingBlock)
 
-            # Copy bytes from memory to buffer
-            for j in range(bytes_to_write):
-                try:
-                    entry.buf[offset + j] = self.M[m + bytes_written + j]
-                except IndexError:
-                    break  # Stop if we exceed memory bounds
 
-            # Update positions and counters
-            entry.position += bytes_to_write
-            bytes_written += bytes_to_write
 
-            # Update file size if we've extended it
-            if entry.position > entry.size:
-                entry.size = entry.position
-                # Update descriptor size immediately
-                b, fd_idx = self.disk.getFD(entry.descriptor)
-                self.disk[b][fd_idx].size = entry.size
 
-            # If buffer is full, flush to disk and load next block
-            if (entry.position % 512) == 0 and entry.position < max_file_size:
-                # Write current buffer to disk
-                current_block_idx = (entry.position // 512) - 1
-                b, fd_idx = self.disk.getFD(entry.descriptor)
-                desc = self.disk[b][fd_idx]
-
-                # Allocate new block if needed
-                if current_block_idx + 1 >= len(desc.blockPointers):
-                    if len(desc.blockPointers) >= 3:
-                        break  # Max blocks reached
-                    new_block = self.disk.allocate_block()
-                    desc.blockPointers.append(new_block)
-
-                # Write current buffer to disk
-                current_block = desc.blockPointers[current_block_idx]
-                self.bufToBlock(i, current_block)
-
-                # Load next block into buffer
-                next_block = desc.blockPointers[current_block_idx + 1]
-                self.blockToBuf(i, next_block)
-
-        # Final buffer flush if we're at end of file
-        if entry.position % 512 != 0:
-            current_block_idx = entry.position // 512
-            b, fd_idx = self.disk.getFD(entry.descriptor)
-            current_block = self.disk[b][fd_idx].blockPointers[current_block_idx]
-            self.bufToBlock(i, current_block)
-
-        return f"Wrote {bytes_written} bytes to file {i}"
 
 
 

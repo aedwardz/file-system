@@ -176,8 +176,17 @@ class FS:
 
 
 
-
-
+    def write_memory(self, m, s):
+        """
+        Writes a string to self.M
+        :param m: starting index of self.M
+        :param s: string
+        :return: None
+        """
+        mIndex = m
+        for char in s:
+            self.M[mIndex] = char
+            mIndex += 1
     def seek(self, i, p) -> str:
         """
         Changes block and current position of a file

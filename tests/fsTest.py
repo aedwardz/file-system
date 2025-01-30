@@ -198,6 +198,18 @@ class TestFS(unittest.TestCase):
 
         self.assertEqual(self.fs.oft[0].size, 513)
 
+    def testSeek(self):
+        self.fs.create("tone")
+        self.fs.open("tone")
+        self.fs.write_memory(0,"h"*512)
+        self.fs.write(0,0,512)
+        self.fs.write(0, 0, 512)
+        self.assertEqual(self.fs.seek(0, 3), "Current position is 3")
+
+
+        with self.assertRaises(Exception):
+            self.fs.seek(0,1400)
+
 
 if __name__ == "__main__":
     unittest.main()

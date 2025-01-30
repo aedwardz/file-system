@@ -24,7 +24,7 @@ class OFT:
 
 class oftEntry():
     def __init__(self):
-        self.buf = []
+        self.buf = [0] * 512
         self.position = -1
         self.size = 0
         self.descriptor = -1

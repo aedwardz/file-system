@@ -115,7 +115,7 @@ class FS:
                 bytesRead += 1
                 if bytesRead == n:
                     self.oft[i].position = startPos + n
-                    return "all bytes read"
+                    return f"{n} bytes read from {i+1}"
                 mIndex += 1
             offset = 0
             self.bufToBlock(i, block)
@@ -165,7 +165,7 @@ class FS:
                     b, x = self.disk.getFD(self.oft[i].descriptor)
                     self.disk[b][x].size = size
                     self.oft[i].size = size
-                return f"{n} bytes written"
+                return f"{n} bytes written to {i+1}"
 
             if offset == 512:
                 #switch buffers
@@ -179,7 +179,7 @@ class FS:
                             b, x = self.disk.getFD(self.oft[i].descriptor)
                             self.disk[b][x].size = size
                             self.oft[i].size = size
-                        return f"{bytesWritten} bytes written"
+                        return f"{bytesWritten} bytes written to {i+1}"
                     else:
                         b, x = self.disk.getFD(entry.descriptor)
                         self.disk[b][x].blockPointers.append(self.disk.allocate_block())
@@ -218,10 +218,10 @@ class FS:
         if p > self.oft[i].size:
             raise Exception('current position is past the end of the file')
 
+        blocks = self.disk.getFDBlocks(self.oft[i].descriptor)
+        currentBlock = blocks[self.oft[i].position // 512]
 
-        currentBlock = self.oft[i].position // 512
-
-        newBlock = p // 512
+        newBlock = blocks[p // 512]
 
         if currentBlock != newBlock:
             #copy current buffer back to disk

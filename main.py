@@ -1,7 +1,7 @@
 from fs import FS
 
 fs = FS()
-with open('sample2.txt', 'r') as file:
+with open('sample.txt', 'r') as file:
     # Iterate over each line in the file
     for line in file:
         # Process the line (e.g., print it)

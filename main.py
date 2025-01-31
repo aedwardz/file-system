@@ -1,7 +1,7 @@
 from fs import FS
 
 fs = FS()
-with open('sample.txt', 'r') as file:
+with open('sample2.txt', 'r') as file, open('output.txt', 'w') as outfile:
     # Iterate over each line in the file
     for line in file:
         # Process the line (e.g., print it)
@@ -9,73 +9,73 @@ with open('sample.txt', 'r') as file:
 
         line = line.split()
         if not line:
-            print()
+            outfile.write('\n')
             continue
         # print(line)
 
         if line[0] == "in":
             fs.__init__()
-            print("System Initialized")
+            outfile.write("System Initialized" + '\n')
         if line[0] == 'cr':
             name = line[1]
             try:
-                print(fs.create(name))
+                outfile.write(fs.create(name)+ '\n')
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'de':
             name = line[1]
             try:
-                print(fs.destroy(name))
+                outfile.write(fs.destroy(name)+ '\n')
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'op':
             name = line[1]
             try:
                 fs.open(name)
-                print(f"File \"{name}\" opened")
+                outfile.write(f"File \"{name}\" opened"+ '\n')
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'cl':
             num = int(line[1])-1
             try:
-                print(fs.close(num))
+                outfile.write(fs.close(num)+ '\n')
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'dr':
             try:
                 fs.directory()
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'rd':
             arg1, arg2, arg3 = int(line[1])-1, int(line[2]), int(line[3])
             try:
-                print(fs.read(arg1, arg2, arg3))
+                outfile.write(fs.read(arg1, arg2, arg3)+ '\n')
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'wr':
             arg1, arg2, arg3 = int(line[1])-1, int(line[2]), int(line[3])
             try:
-                print(fs.write(arg1, arg2, arg3))
+                outfile.write(fs.write(arg1, arg2, arg3)+ '\n')
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'sk':
             i, p = int(line[1])-1, int(line[2])
             try:
-                print(fs.seek(i, p))
+                outfile.write(fs.seek(i, p)+ '\n')
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'rm':
             m, n = int(line[1]), int(line[2])
             try:
                 fs.read_memory(m, n)
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
         if line[0] == 'wm':
             m, s = int(line[1]), line[2]
             try:
-                fs.write_memory(m, s)
+                outfile.write(fs.write_memory(m, s)+ '\n')
             except Exception as e:
-                print(e)
+                outfile.write(str(e)+ '\n')
 
 
 

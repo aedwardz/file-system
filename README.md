@@ -7,3 +7,4 @@
    ```sh
    path/to/you/input/file
      
+3. **navigate to output.txt to see results

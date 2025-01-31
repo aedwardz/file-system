@@ -73,6 +73,8 @@ class FS:
         """
         #copy buffer to disk
         entry = self.oft[i]
+        if entry.position == -1:
+            raise Exception('File is not open')
         blockPointerindex = entry.position // 512
         b, x = self.disk.getFD(entry.descriptor)
         block = self.disk[b][x].blockPointers[blockPointerindex]

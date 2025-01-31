@@ -2,7 +2,8 @@ from fs import FS
 import sys
 
 fs = FS()
-with open('FS-input-1.txt', 'r') as file, open('output.txt', 'w') as outfile:
+path = input("enter the path for your input file:")
+with open(path, 'r') as file, open('output.txt', 'w') as outfile:
     sys.stdout = outfile
     # Iterate over each line in the file
     for line in file:

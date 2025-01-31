@@ -16,14 +16,14 @@ class Disk:
             if self.disk[0][i] == 0:  # Free block
                 self.disk[0][i] = 1  # Mark as used
                 return i  # Return the bitmap index
-        raise ValueError("No free blocks available.")
+        raise ValueError("Error: No free blocks available.")
 
     def deallocate_block(self, block_index):
         """Free a previously allocated block."""
         if self.disk[0][block_index] == 1:  # Block is in use
             self.disk[0][block_index] = 0  # Mark as free
         else:
-            raise ValueError(f"Block {block_index} is already free.")
+            raise ValueError(f"Error: Block {block_index} is already free.")
 
     def initializeDisk(self) -> None:
         """
@@ -91,7 +91,7 @@ class Disk:
             entries = self.disk[block]
             for entry in entries:
                 if entry[0] == name:
-                    raise Exception('Duplicate file')
+                    raise Exception('Error: Duplicate file')
 
         fdNum = -1
         #       #new file descriptor
@@ -106,7 +106,7 @@ class Disk:
                         break
 
         if not assigned:
-            raise Exception("too many files")
+            raise Exception("Error: too many files")
 
         for block in directoryBlocks:
             entries = self.disk[block]
@@ -142,7 +142,7 @@ class Disk:
                     self.disk[b][i] = (0,0)
                     return f"file {name} destroyed"
 
-        raise Exception('file does not exist')
+        raise Exception('Error: file does not exist')
 
     def __getitem__(self, item):
         return self.disk[item]

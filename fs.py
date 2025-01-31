@@ -40,14 +40,32 @@ class FS:
     def destroy(self, name:str):
         return self.disk.destroy(name)
 
+
+    def isOpen(self, name:str) ->bool:
+        #get the file descriptor of the file
+        #check if that descriptor is in the oft
+        #if it is in, check the position that it is -1
+        #if not, return False
+        index = self.disk.searchDirectory(name)
+        if not index:
+            return False
+
+        for entry in self.oft.oft:
+            if entry.descriptor == index and entry.position != -1:
+                return True
+
+        return False
+
     def open(self, name:str):
+        if self.isOpen(name):
+            raise Exception("Error: file is already open")
         dirIndex = self.disk.searchDirectory(name)
         if not dirIndex:
-            raise Exception('File does not exist')
+            raise Exception('Error: File does not exist')
 
         oftIndex = self.oft.searchFreeEntry()
         if oftIndex is None:
-            raise Exception('Too many files open')
+            raise Exception('Error: Too many files open')
 
         self.oft[oftIndex].descriptor = dirIndex
 
@@ -74,7 +92,7 @@ class FS:
         #copy buffer to disk
         entry = self.oft[i]
         if entry.position == -1:
-            raise Exception('File is not open')
+            raise Exception('Error: File is not open')
         blockPointerindex = entry.position // 512
         b, x = self.disk.getFD(entry.descriptor)
         block = self.disk[b][x].blockPointers[blockPointerindex]
@@ -101,7 +119,7 @@ class FS:
 
         entry = self.oft[i]
         if entry.position == -1:
-            raise Exception("File not open")
+            raise Exception("Error: File not open")
         blocks = self.disk.getFDBlocks(entry.descriptor)
         bpIndex = entry.position // 512
         startPos = entry.position
@@ -109,7 +127,7 @@ class FS:
         offset = entry.position % 512
         mIndex = m
         bytesRead = 0
-
+        trueData = 0
         for block in blocks[bpIndex:]:
             if block != startingBlock:
                 self.blockToBuf(i, block)
@@ -117,9 +135,11 @@ class FS:
                 byte = self.oft[i].buf[j]
                 self.M[mIndex] = byte
                 bytesRead += 1
+                if byte != 0:
+                    trueData += 1
                 if bytesRead == n:
                     self.oft[i].position = startPos + n
-                    return f"{n} bytes read from {i+1}"
+                    return f"{trueData} bytes read from {i+1}"
                 mIndex += 1
             offset = 0
             self.bufToBlock(i, block)
@@ -136,7 +156,7 @@ class FS:
 
         entry = self.oft[i]
         if entry.position == -1:
-            raise Exception('File must be opened first')
+            raise Exception('Error: File must be opened first')
         blocks = self.disk.getFDBlocks(entry.descriptor)
         bpIndex = entry.position // 512  # Block index in file
         startPos = entry.position  # Track the initial position
@@ -223,7 +243,7 @@ class FS:
             Success String
         """
         if p > self.oft[i].size:
-            raise Exception('current position is past the end of the file')
+            raise Exception('Error: current position is past the end of the file')
 
         blocks = self.disk.getFDBlocks(self.oft[i].descriptor)
         currIndex = self.oft[i].position // 512

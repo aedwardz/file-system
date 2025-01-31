@@ -1,7 +1,9 @@
 from fs import FS
+import sys
 
 fs = FS()
-with open('sample2.txt', 'r') as file, open('output.txt', 'w') as outfile:
+with open('FS-input-1.txt', 'r') as file, open('output.txt', 'w') as outfile:
+    sys.stdout = outfile
     # Iterate over each line in the file
     for line in file:
         # Process the line (e.g., print it)
@@ -31,8 +33,8 @@ with open('sample2.txt', 'r') as file, open('output.txt', 'w') as outfile:
         if line[0] == 'op':
             name = line[1]
             try:
-                fs.open(name)
-                outfile.write(f"File \"{name}\" opened"+ '\n')
+                ind = fs.open(name)
+                outfile.write(f"File \"{name}\" opened {ind+1}"+ '\n')
             except Exception as e:
                 outfile.write(str(e)+ '\n')
         if line[0] == 'cl':

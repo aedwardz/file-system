@@ -248,6 +248,14 @@ class TestFS(unittest.TestCase):
         self.fs.directory()
 
 
+    def testIsOpen(self):
+        self.fs.create("tone")
+        self.assertFalse(self.fs.isOpen("tone"))
+        self.fs.open("tone")
+        self.assertTrue(self.fs.isOpen("tone"))
+        self.assertFalse(self.fs.isOpen("jen"))
+
+
 
 
 

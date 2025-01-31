@@ -1,0 +1,8 @@
+in
+cr abc
+op abc
+wr 1 0 512
+wr 1 0 512
+wr 1 0 500
+wr 1 0 30
+dr

@@ -4,7 +4,7 @@ from oft import OFT
 class FS:
     def __init__(self):
 
-        self.disk = Disk(100)
+        self.disk = Disk(64)
         self.oft = OFT()
         self.k = self.disk.k
         self.M = [0] * 512
@@ -100,6 +100,8 @@ class FS:
 
 
         entry = self.oft[i]
+        if entry.position == -1:
+            raise Exception("File not open")
         blocks = self.disk.getFDBlocks(entry.descriptor)
         bpIndex = entry.position // 512
         startPos = entry.position
@@ -200,10 +202,13 @@ class FS:
         for char in s:
             self.M[mIndex] = char
             mIndex += 1
+        return f"{len(s)} bytes written to M"
 
     def read_memory(self, m:int, n:int):
-        print("Memory Contents:")
+
         for i in range(m, m+n):
+            if self.M[i] == 0:
+                continue
             print(self.M[i], end= " ")
         print()
 
@@ -221,18 +226,27 @@ class FS:
             raise Exception('current position is past the end of the file')
 
         blocks = self.disk.getFDBlocks(self.oft[i].descriptor)
-        currentBlock = blocks[self.oft[i].position // 512]
-
-        newBlock = blocks[p // 512]
-
-        if currentBlock != newBlock:
-            #copy current buffer back to disk
-            self.bufToBlock(i, currentBlock)
-            #copy new block onto the entry
+        currIndex = self.oft[i].position // 512
+        if currIndex >= len(blocks):
+            newBlock = blocks[p // 512]
             self.blockToBuf(i, newBlock)
+            self.oft[i].position = p
+            return f'Current position is {p}'
 
-        self.oft[i].position = p
-        return f'Current position is {p}'
+        else:
+            currentBlock = blocks[self.oft[i].position // 512]
+
+
+            newBlock = blocks[p // 512]
+
+            if currentBlock != newBlock:
+                #copy current buffer back to disk
+                self.bufToBlock(i, currentBlock)
+                #copy new block onto the entry
+                self.blockToBuf(i, newBlock)
+
+            self.oft[i].position = p
+            return f'Current position is {p}'
 
     def directory(self):
         dirBlocks = self.disk.getFDBlocks(0)

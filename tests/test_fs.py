@@ -130,7 +130,7 @@ class TestFS(unittest.TestCase):
         self.fs.disk[block][3] = 4
         self.fs.disk[block][4] = 5
         self.fs.open('tone')
-        self.assertEqual(self.fs.read(0, 0, 5), "all bytes read")
+        self.assertEqual(self.fs.read(0, 0, 5), "5 bytes read from 1")
         expected = [1,2,3,4, 5] + [0 for i in range(512-5)]
         self.assertEqual(len(expected), 512)
         self.assertEqual(self.fs.M, expected)
@@ -149,7 +149,7 @@ class TestFS(unittest.TestCase):
         self.fs.disk[block2] = [6,7,8,9,10] + [0 for i in range(512-5)]
         self.fs.open('tone')
         self.fs.oft[0].position = 507
-        self.assertEqual(self.fs.read(0,0,10), "all bytes read")
+        self.assertEqual(self.fs.read(0,0,10), "10 bytes read from 1")
         self.assertEqual(self.fs.M, [1,2,3,4,5,6,7,8,9,10] + [0 for i in range(502)])
 
     def testBasicWrite(self):
@@ -160,7 +160,7 @@ class TestFS(unittest.TestCase):
         self.fs.M = [1, 2, 3, 4, 5] + [0 for _ in range(512 - 5)]
 
         # Write 5 bytes from memory M starting at index 0
-        self.assertEqual(self.fs.write(0, 0, 5), "5 bytes written")
+        self.assertEqual(self.fs.write(0, 0, 5), "5 bytes written to 1")
 
         # Ensure that position has been updated
         self.assertEqual(self.fs.oft[0].position, 5)
@@ -191,7 +191,7 @@ class TestFS(unittest.TestCase):
         blocks = self.fs.disk.getFDBlocks(self.fs.oft[0].descriptor)
         print(blocks)
         # Write 5 bytes from memory M starting at index 0
-        self.assertEqual(self.fs.write(0, 0, 512), "512 bytes written")
+        self.assertEqual(self.fs.write(0, 0, 512), "512 bytes written to 1")
         blocks = self.fs.disk.getFDBlocks(self.fs.oft[0].descriptor)
         print(blocks)
 
@@ -228,6 +228,12 @@ class TestFS(unittest.TestCase):
         with self.assertRaises(Exception):
             self.fs.seek(0,1400)
 
+    def testSeek(self):
+        self.fs.create("tone")
+        self.fs.open("tone")
+        self.fs.write_memory(0, "h" * 512)
+        self.fs.write(0, 0, 300)
+        self.assertEqual(self.fs.seek(0, 279), "Current position is 279")
     def testDirectory(self):
         self.fs.create("tone")
         self.fs.create("is")

@@ -1,7 +1,7 @@
 
 class OFT:
     def __init__(self):
-        self.oft = [oftEntry() for i in range(4)]
+        self.oft = [oftEntry() for i in range(3)]
 
     def __getitem__(self, item):
         return self.oft[item]

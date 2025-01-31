@@ -1,8 +1,6 @@
 import unittest
 from disk import Disk
 from oft import OFT, oftEntry
-from inputBuffer import InputBuffer
-from outputBuffer import OutputBuffer
 from fs import FS
 
 
@@ -176,6 +174,13 @@ class TestFS(unittest.TestCase):
 
         # Ensure file size is updated correctly
         self.assertEqual(self.fs.oft[0].size, 5)
+
+    def testWriteUnopenedFile(self):
+        self.fs.create('tone')
+        self.fs.write_memory(0, "hello")
+
+        with self.assertRaises(Exception):
+            self.fs.write(0,0,5)
     def testWriteBetweenBuffers(self):
         self.fs.create("tone")
         self.fs.open("tone")
@@ -197,6 +202,19 @@ class TestFS(unittest.TestCase):
         self.assertEqual(self.fs.oft[0].buf, [5] + [0 for i in range(511)])
 
         self.assertEqual(self.fs.oft[0].size, 513)
+    def testFullWrite(self):
+        self.fs.create('tone')
+        self.fs.open('tone')
+        self.fs.M = [5 for i in range(512)]
+        self.fs.write(0,0,512)
+        self.fs.write(0, 0, 512)
+        self.fs.write(0,0,500)
+        self.fs.write(0,0,30)
+        entry = self.fs.oft[0]
+        print(entry.size)
+        self.assertEqual(entry.size, 1536)
+        self.assertEqual(self.fs.write(0,0,5), "Maximum file storage reached")
+
 
     def testSeek(self):
         self.fs.create("tone")
@@ -209,6 +227,22 @@ class TestFS(unittest.TestCase):
 
         with self.assertRaises(Exception):
             self.fs.seek(0,1400)
+
+    def testDirectory(self):
+        self.fs.create("tone")
+        self.fs.create("is")
+        self.fs.create('tired')
+        print()
+        print("Before write")
+        self.fs.directory()
+        self.fs.write_memory(0, "hello")
+        self.fs.open('tone')
+        print("\nAfter Writing 5 bytes:")
+        self.fs.write(0, 0, 5)
+        self.fs.directory()
+
+
+
 
 
 if __name__ == "__main__":

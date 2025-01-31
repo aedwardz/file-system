@@ -1,6 +1,5 @@
 from disk import Disk
-from inputBuffer import InputBuffer
-from outputBuffer import OutputBuffer
+
 from oft import OFT
 class FS:
     def __init__(self):
@@ -9,7 +8,6 @@ class FS:
         self.oft = OFT()
         self.k = self.disk.k
         self.M = [0] * 512
-
     def bufToBlock(self, i:int, block:int) -> None:
         """
         Copies the buffer at entry i of the OFT
@@ -34,10 +32,15 @@ class FS:
         """
         self.oft[i].buf = self.disk[block].copy()
 
-    def create(self, name):
-        return self.disk.create(name)
+    def create(self, name:str):
+        self.disk.create(name)
+        return f"File {name} created"
 
-    def open(self, name):
+
+    def destroy(self, name:str):
+        return self.disk.destroy(name)
+
+    def open(self, name:str):
         dirIndex = self.disk.searchDirectory(name)
         if not dirIndex:
             raise Exception('File does not exist')
@@ -62,7 +65,7 @@ class FS:
 
         return oftIndex
 
-    def close(self, i):
+    def close(self, i:int):
         """
         Closes a file on the OFT
         :param i:
@@ -82,7 +85,7 @@ class FS:
         #mark oft entry as free by setting current position to -1
         self.oft[i].position = -1
 
-        return f"File {i} closed"
+        return f"File {i+1} closed"
 
     def read(self, i: int, m: int, n: int) -> str:
         """
@@ -117,10 +120,6 @@ class FS:
             offset = 0
             self.bufToBlock(i, block)
 
-
-
-
-
     def write(self, i: int, m: int, n: int) -> str:
         """
         Writes n bytes from memory M starting at location m into the open file at OFT index i,
@@ -132,10 +131,24 @@ class FS:
         """
 
         entry = self.oft[i]
+        if entry.position == -1:
+            raise Exception('File must be opened first')
         blocks = self.disk.getFDBlocks(entry.descriptor)
         bpIndex = entry.position // 512  # Block index in file
         startPos = entry.position  # Track the initial position
         startingBlock = blocks[bpIndex] if bpIndex < len(blocks) else None
+        if not startingBlock:
+            if len(blocks) == 3:
+                return "Maximum file storage reached"
+            else:
+                b, x = self.disk.getFD(entry.descriptor)
+                self.disk[b][x].blockPointers.append(self.disk.allocate_block())
+                blocks = self.disk.getFDBlocks(entry.descriptor)
+                startingBlock = blocks[bpIndex]
+                self.bufToBlock(i, blocks[bpIndex-1])
+                self.blockToBuf(i, blocks[bpIndex])
+
+
         offset = entry.position % 512  # Offset within block
         mIndex = m
         bytesWritten = 0
@@ -161,6 +174,11 @@ class FS:
                 bpIndex += 1
                 if bpIndex == len(blocks):
                     if len(blocks) == 3:
+                        if self.oft[i].position > self.oft[i].size:
+                            size = self.oft[i].size = self.oft[i].position
+                            b, x = self.disk.getFD(self.oft[i].descriptor)
+                            self.disk[b][x].size = size
+                            self.oft[i].size = size
                         return f"{bytesWritten} bytes written"
                     else:
                         b, x = self.disk.getFD(entry.descriptor)
@@ -169,14 +187,7 @@ class FS:
                         startingBlock = blocks[bpIndex]
                         self.blockToBuf(i, startingBlock)
 
-
-
-
-
-
-
-
-    def write_memory(self, m, s):
+    def write_memory(self, m:int, s:str):
         """
         Writes a string to self.M
         :param m: starting index of self.M
@@ -187,7 +198,14 @@ class FS:
         for char in s:
             self.M[mIndex] = char
             mIndex += 1
-    def seek(self, i, p) -> str:
+
+    def read_memory(self, m:int, n:int):
+        print("Memory Contents:")
+        for i in range(m, m+n):
+            print(self.M[i], end= " ")
+        print()
+
+    def seek(self, i:int, p:int) -> str:
         """
         Changes block and current position of a file
         :param i:
@@ -214,29 +232,15 @@ class FS:
         self.oft[i].position = p
         return f'Current position is {p}'
 
+    def directory(self):
+        dirBlocks = self.disk.getFDBlocks(0)
+        for block in dirBlocks:
+            for i in range(len(self.disk[block])):
+                name = self.disk[block][i][0]
+                if name != 0:
+                    index = self.disk[block][i][1]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                    b, x = self.disk.getFD(index)
+                    size = self.disk[b][x].size
+                    print(f"{name}-{size}", end=" ")
+        print()
